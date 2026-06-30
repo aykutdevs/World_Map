@@ -1,31 +1,39 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using Unity.AI.Navigation; // NavMeshSurface kullanabilmek için gerekli paket
 
 public class MapDisplay : MonoBehaviour
 {
     public Renderer textureRender;
+    public MeshFilter meshFilter;
+    public MeshRenderer meshRenderer;
 
-    public void DrawNoiseMap(float[,] noiseMap)
+    // YENÝ EKLENEN REFERANSLAR
+    public MeshCollider meshCollider;
+    public NavMeshSurface navMeshSurface;
+
+    public void DrawTexture(Texture2D texture)
     {
-        int width = noiseMap.GetLength(0);
-        int height = noiseMap.GetLength(1);
-
-        Texture2D texture = new Texture2D(width, height);
-
-        Color[] colourMap = new Color[width * height];
-        for (int y = 0; y < height; y++)
-        {
-            for (int x = 0; x<width; x++)
-            {
-                colourMap[y * width + x] = Color.Lerp(Color.black, Color.white, noiseMap[x, y]);
-            }
-        }
-        texture.SetPixels (colourMap);
-        texture.Apply ();
-
         textureRender.sharedMaterial.mainTexture = texture;
-        textureRender.transform.localScale = new Vector3 (width, 1, height);
+        textureRender.transform.localScale = new Vector3(texture.width, 1, texture.height);
     }
 
+    public void DrawMesh(MeshData meshData, Texture2D texture)
+    {
+        Mesh generatedMesh = meshData.CreateMesh();
+
+        meshFilter.sharedMesh = generatedMesh;
+        meshRenderer.sharedMaterial.mainTexture = texture;
+
+        // Harita her deðiþtiðinde 3D fiziksel çarpýþma yüzeyini güncelle
+        if (meshCollider != null)
+        {
+            meshCollider.sharedMesh = generatedMesh;
+        }
+
+        // Harita oluþtuktan hemen sonra NavMesh'i otomatik olarak piþir (Bake)
+        if (navMeshSurface != null)
+        {
+            navMeshSurface.BuildNavMesh();
+        }
+    }
 }
